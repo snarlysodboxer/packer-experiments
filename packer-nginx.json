@@ -1,0 +1,48 @@
+{
+  "variables": {
+    "base_image": null
+  },
+  "builders": [
+    {
+      "type": "docker",
+      "image": "{{user `base_image`}}:latest",
+      "commit": true,
+      "changes": [
+        "WORKDIR /var/www",
+        "ENTRYPOINT [\"nginx\", \"-g\", \"daemon off;\"]"
+      ]
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "environment_vars": ["DEBIAN_FRONTEND=noninteractive"],
+      "inline_shebang": "/bin/bash -e",
+      "inline": [
+          "if [ \"{{user `base_image`}}\" == \"ubuntu\" ]; then apt-get update && apt-get install -y nginx; else yum install -y nginx; fi",
+          "if [ \"{{user `base_image`}}\" == \"ubuntu\" ]; then useradd --home-dir /var/www --shell /sbin/nologin nginx; fi",
+          "mkdir -p /etc/nginx/sites-enabled /html && chown nginx:nginx /html"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "./files/nginx.conf",
+      "destination": "/etc/nginx/nginx.conf"
+    },
+    {
+      "type": "file",
+      "source": "./files/default",
+      "destination": "/etc/nginx/sites-enabled/"
+    }
+  ],
+  "post-processors": [
+    [
+      {
+        "type": "docker-tag",
+        "repository": "snarlysodboxer/{{user `base_image`}}-nginx",
+        "tag": "latest"
+      },
+      "docker-push"
+    ]
+  ]
+}
