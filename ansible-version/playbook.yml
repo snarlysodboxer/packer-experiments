@@ -1,0 +1,37 @@
+---
+- name: Create Nginx Image
+  hosts: default
+  gather_facts: false
+  tasks:
+  - name: install Python
+    raw: test -e /usr/bin/apt-get && (apt-get -y update && apt-get install -y python3-minimal) || (yum -y install python36)
+  - name: install Nginx
+    package:
+      name: nginx
+      state: latest
+  - name: add nginx user
+    shell:
+      cmd: "if !(cat /etc/passwd | grep -q nginx); then useradd --home-dir /var/www --shell /sbin/nologin nginx; fi"
+  - name: make sites enabled dir
+    file:
+      path: /etc/nginx/sites-enabled
+      owner: nginx
+      group: nginx
+      mode: '0750'
+      state: directory
+  - name: make html dir
+    file:
+      path: /html
+      owner: nginx
+      group: nginx
+      mode: '0750'
+      state: directory
+  - name: copy nginx.conf
+    copy:
+      src: ../files/nginx.conf
+      dest: /etc/nginx/nginx.conf
+  - name: copy enabled site
+    copy:
+      src: ../files/default
+      dest: /etc/nginx/sites-enabled/default
+

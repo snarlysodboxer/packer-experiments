@@ -1,0 +1,32 @@
+{
+  "variables": {
+    "base_image": null
+  },
+  "builders": [
+    {
+      "type": "docker",
+      "image": "{{user `base_image`}}:latest",
+      "commit": true,
+      "changes": [
+        "WORKDIR /var/www",
+        "ENTRYPOINT [\"nginx\", \"-g\", \"daemon off;\"]"
+      ]
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "ansible",
+      "playbook_file": "./playbook.yml"
+    }
+  ],
+  "post-processors": [
+    [
+      {
+        "type": "docker-tag",
+        "repository": "snarlysodboxer/{{user `base_image`}}-nginx",
+        "tag": "latest"
+      },
+      "docker-push"
+    ]
+  ]
+}
